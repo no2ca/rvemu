@@ -20,6 +20,7 @@ const QUEUE_ALIGN_REG: u64 = VIRTIO_NET_BASE + 0x3c;
 const QUEUE_PFN: u64 = VIRTIO_NET_BASE + 0x40;
 const QUEUE_NOTIFY: u64 = VIRTIO_NET_BASE + 0x50;
 const INTERRUPT_STATUS: u64 = VIRTIO_NET_BASE + 0x60;
+const INTERRUPT_ACK: u64 = VIRTIO_NET_BASE + 0x64;
 const STATUS: u64 = VIRTIO_NET_BASE + 0x70;
 const CONFIG: u64 = VIRTIO_NET_BASE + 0x100;
 
@@ -256,4 +257,47 @@ fn virtio_net_broadcast_packet_gets_fixed_response() {
         let addr = frame_base + 14 + i as u64;
         assert_eq!(*b as u64, cpu.bus.read(addr, BYTE).unwrap());
     }
+}
+
+#[test]
+fn virtio_net_queue_interrupt_only_after_notify_and_ack_clears_status() {
+    let mut cpu = Cpu::new();
+
+    let rx_queue_base = DRAM_BASE + 0xd000;
+    let rx_buffer_addr = DRAM_BASE + 0xe000;
+    let (_rx_desc, rx_avail, _rx_used) = virtqueue_layout(rx_queue_base);
+
+    mmio_write(&mut cpu, GUEST_PAGE_SIZE_REG, GUEST_PAGE_SIZE);
+
+    // Configure RX queue (0).
+    mmio_write(&mut cpu, QUEUE_SEL, 0);
+    mmio_write(&mut cpu, QUEUE_NUM, QUEUE_SIZE);
+    mmio_write(&mut cpu, QUEUE_ALIGN_REG, QUEUE_ALIGN);
+    mmio_write(&mut cpu, QUEUE_PFN, rx_queue_base / GUEST_PAGE_SIZE);
+    mmio_write(&mut cpu, STATUS, 0x4);
+
+    // Posting descriptors alone must not trigger queue processing.
+    write_desc(
+        &mut cpu,
+        rx_queue_base,
+        0,
+        rx_buffer_addr,
+        (VIRTIO_NET_HDR_SIZE + 64) as u64,
+        VIRTQ_DESC_F_WRITE,
+    );
+    cpu.bus.write(rx_avail + 2, 1, HALFWORD).unwrap();
+    cpu.bus.write(rx_avail + 4, 0, HALFWORD).unwrap();
+    assert!(!cpu.bus.virtio_net.is_interrupting());
+
+    // Host-side injection should trigger once, then clear.
+    cpu.bus
+        .virtio_net
+        .inject_rx_packet(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, b'x']);
+    assert!(cpu.bus.virtio_net.is_interrupting());
+    VirtioNet::net_access(&mut cpu).unwrap();
+    assert!(!cpu.bus.virtio_net.is_interrupting());
+
+    assert_eq!(1, cpu.bus.read(INTERRUPT_STATUS, WORD).unwrap() & 0x1);
+    mmio_write(&mut cpu, INTERRUPT_ACK, 0x1);
+    assert_eq!(0, cpu.bus.read(INTERRUPT_STATUS, WORD).unwrap() & 0x1);
 }

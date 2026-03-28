@@ -209,7 +209,9 @@ pub struct VirtioNet {
     queue_align: [u32; QUEUE_COUNT],
     queue_pfn: [u32; QUEUE_COUNT],
     queue_notify: u32,
+    queue_notified: bool,
     last_notified_queue: u32,
+    external_rx_interrupt: bool,
     interrupt_status: u32,
     status: u32,
     config: [u8; 8],
@@ -244,7 +246,9 @@ impl VirtioNet {
             queue_align: [0x1000; QUEUE_COUNT],
             queue_pfn: [0; QUEUE_COUNT],
             queue_notify: u32::MAX,
+            queue_notified: false,
             last_notified_queue: 0,
+            external_rx_interrupt: false,
             interrupt_status: 0,
             status: 0,
             config,
@@ -307,7 +311,9 @@ impl VirtioNet {
     /// Resets the device when `status` is written to 0.
     fn reset(&mut self) {
         self.queue_notify = u32::MAX;
+        self.queue_notified = false;
         self.last_notified_queue = 0;
+        self.external_rx_interrupt = false;
         self.interrupt_status = 0;
         self.queue_sel = 0;
         self.queue_num = [0; QUEUE_COUNT];
@@ -322,9 +328,14 @@ impl VirtioNet {
 
     /// Returns true if an interrupt is pending.
     pub fn is_interrupting(&mut self) -> bool {
-        if self.queue_notify != u32::MAX {
+        if self.queue_notified {
             self.last_notified_queue = self.queue_notify;
-            self.queue_notify = u32::MAX;
+            self.queue_notified = false;
+            return true;
+        }
+        if self.external_rx_interrupt {
+            self.last_notified_queue = 0;
+            self.external_rx_interrupt = false;
             return true;
         }
         false
@@ -333,6 +344,12 @@ impl VirtioNet {
     /// Pushes an incoming payload packet into the RX queue.
     pub fn push_rx_packet(&mut self, payload: Vec<u8>) {
         self.rx_queue.push_back(payload);
+    }
+
+    /// Injects one RX payload from the host side and schedules an RX interrupt.
+    pub fn inject_rx_packet(&mut self, payload: Vec<u8>) {
+        self.rx_queue.push_back(payload);
+        self.external_rx_interrupt = true;
     }
 
     /// Pops one packet transmitted by the guest.
@@ -454,10 +471,11 @@ impl VirtioNet {
             QUEUE_NOTIFY..=QUEUE_NOTIFY_END => {
                 self.queue_notify =
                     update_register(self.queue_notify, addr - QUEUE_NOTIFY, value, size)?;
+                self.queue_notified = true;
             }
             INTERRUPT_ACK..=INTERRUPT_ACK_END => {
-                self.interrupt_status =
-                    update_register(self.interrupt_status, addr - INTERRUPT_ACK, value, size)?;
+                let ack = update_register(0, addr - INTERRUPT_ACK, value, size)?;
+                self.interrupt_status &= !ack;
             }
             STATUS..=STATUS_END => {
                 self.status = update_register(self.status, addr - STATUS, value, size)?;
