@@ -12,6 +12,7 @@ use crate::{
     devices::{
         uart::UART_IRQ,
         virtio_blk::{Virtio, VIRTIO_IRQ},
+        virtio_net::{VirtioNet, VIRTIO_NET_IRQ},
     },
     dram::DRAM_SIZE,
     exception::Exception,
@@ -342,7 +343,7 @@ impl Cpu {
 
         // TODO: Take interrupts based on priorities.
 
-        // Check external interrupt for uart and virtio.
+        // Check external interrupt for uart and virtio devices.
         let irq;
         if self.bus.uart.is_interrupting() {
             irq = UART_IRQ;
@@ -350,6 +351,10 @@ impl Cpu {
             // An interrupt is raised after a disk access is done.
             Virtio::disk_access(self).expect("failed to access the disk");
             irq = VIRTIO_IRQ;
+        } else if self.bus.virtio_net.is_interrupting() {
+            // An interrupt is raised after a network queue access is done.
+            VirtioNet::net_access(self).expect("failed to access the network device");
+            irq = VIRTIO_NET_IRQ;
         } else {
             irq = 0;
         }

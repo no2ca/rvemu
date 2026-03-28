@@ -1,9 +1,9 @@
-#![feature(generators, generator_trait)]
+#![feature(coroutines, coroutine_trait, stmt_expr_attributes, yield_expr)]
 
 mod utils;
 
 use std::cell::RefCell;
-use std::ops::{Generator, GeneratorState};
+use std::ops::{Coroutine, CoroutineState};
 use std::pin::Pin;
 use std::rc::Rc;
 
@@ -102,7 +102,8 @@ pub fn emulator_start(kernel: Vec<u8>, fsimg: Option<Vec<u8>>) {
 
     set_executing();
 
-    let mut generator = move || {
+    let mut generator = #[coroutine]
+    move || {
         let mut count: u64 = 0;
         loop {
             count += 1;
@@ -140,7 +141,7 @@ pub fn emulator_start(kernel: Vec<u8>, fsimg: Option<Vec<u8>>) {
     *cloned_handler.borrow_mut() =
         Some(Closure::wrap(
             Box::new(move || match Pin::new(&mut generator).resume(()) {
-                GeneratorState::Complete(mut emu) => {
+                CoroutineState::Complete(mut emu) => {
                     clear_executing();
                     dump_registers(&mut emu.cpu);
                 }

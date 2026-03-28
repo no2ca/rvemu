@@ -104,7 +104,8 @@ function help() {
   term.writeln("  upload      open local files for the execution on the emulator");
   term.writeln("  ls          list files you uploaded");
   term.writeln("  run [file]  execute a file");
-  term.write("  help        print all commands you can use");
+  term.writeln("  help        print all commands you can use");
+  term.write("Preloaded apps: fib, xv6, virtio_net_min");
 }
 
 function upload() {
@@ -170,6 +171,13 @@ function loadApps() {
     .then(response => response.blob())
     .then(blob => {
       const sampleApp = new File([blob], "xv6");
+      files.push(sampleApp);
+    });
+
+  fetch("./apps/virtio_net_min.text")
+    .then(response => response.blob())
+    .then(blob => {
+      const sampleApp = new File([blob], "virtio_net_min");
       files.push(sampleApp);
     });
 

@@ -1,7 +1,9 @@
 //! The bus module contains the system bus which can access the memroy or memory-mapped peripheral
 //! devices.
 
-use crate::devices::{clint::Clint, plic::Plic, uart::Uart, virtio_blk::Virtio};
+use crate::devices::{
+    clint::Clint, plic::Plic, uart::Uart, virtio_blk::Virtio, virtio_net::VirtioNet,
+};
 use crate::dram::{Dram, DRAM_SIZE};
 use crate::exception::Exception;
 use crate::rom::Rom;
@@ -36,8 +38,12 @@ const UART_END: u64 = UART_BASE + 0x100;
 
 /// The address which virtio starts.
 pub const VIRTIO_BASE: u64 = 0x1000_1000;
-/// The address which virtio ends.
-const VIRTIO_END: u64 = VIRTIO_BASE + 0x1000;
+/// The address which virtio block device ends.
+const VIRTIO_END: u64 = VIRTIO_BASE + 0xfff;
+/// The address which virtio network device starts.
+pub const VIRTIO_NET_BASE: u64 = VIRTIO_BASE + 0x1000;
+/// The address which virtio network device ends.
+const VIRTIO_NET_END: u64 = VIRTIO_NET_BASE + 0xfff;
 
 /// The address which DRAM starts.
 pub const DRAM_BASE: u64 = 0x8000_0000;
@@ -50,6 +56,7 @@ pub struct Bus {
     pub plic: Plic,
     pub uart: Uart,
     pub virtio: Virtio,
+    pub virtio_net: VirtioNet,
     dram: Dram,
     pub rom: Rom,
 }
@@ -62,6 +69,7 @@ impl Bus {
             plic: Plic::new(),
             uart: Uart::new(),
             virtio: Virtio::new(),
+            virtio_net: VirtioNet::new(),
             dram: Dram::new(),
             rom: Rom::new(),
         }
@@ -85,6 +93,7 @@ impl Bus {
             PLIC_BASE..=PLIC_END => self.plic.read(addr, size),
             UART_BASE..=UART_END => self.uart.read(addr, size),
             VIRTIO_BASE..=VIRTIO_END => self.virtio.read(addr, size),
+            VIRTIO_NET_BASE..=VIRTIO_NET_END => self.virtio_net.read(addr, size),
             DRAM_BASE..=DRAM_END => self.dram.read(addr, size),
             _ => Err(Exception::LoadAccessFault),
         }
@@ -97,6 +106,7 @@ impl Bus {
             PLIC_BASE..=PLIC_END => self.plic.write(addr, value, size),
             UART_BASE..=UART_END => self.uart.write(addr, value as u8, size),
             VIRTIO_BASE..=VIRTIO_END => self.virtio.write(addr, value as u32, size),
+            VIRTIO_NET_BASE..=VIRTIO_NET_END => self.virtio_net.write(addr, value as u32, size),
             DRAM_BASE..=DRAM_END => self.dram.write(addr, value, size),
             _ => Err(Exception::StoreAMOAccessFault),
         }

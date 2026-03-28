@@ -3,6 +3,7 @@
 pub mod clint;
 pub mod plic;
 pub mod virtio_blk;
+pub mod virtio_net;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod uart_cli;
