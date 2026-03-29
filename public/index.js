@@ -1,4 +1,4 @@
-import init, { emulator_start } from "./pkg/rvemu_wasm.js";
+import init, { emulator_start, emulator_start_with_net_demo } from "./pkg/rvemu_wasm.js";
 
 const termContainer = document.getElementById("terminal");
 const term  = new Terminal({cursorBlink: true});
@@ -56,6 +56,9 @@ async function initEmulator() {
       if (e.target.fileName == "xv6") {
         emulator_start(data, fsImgData);
         console.log("xv6 is executing...");
+      } else if (e.target.fileName == "virtio_net_host_rx") {
+        emulator_start_with_net_demo(data, null, true);
+        console.log("virtio_net_host_rx is executing with net-demo...");
       } else {
         emulator_start(data, null);
       }
@@ -105,7 +108,7 @@ function help() {
   term.writeln("  ls          list files you uploaded");
   term.writeln("  run [file]  execute a file");
   term.writeln("  help        print all commands you can use");
-  term.write("Preloaded apps: fib, xv6, virtio_net_min");
+  term.write("Preloaded apps: fib, xv6, virtio_net_min, virtio_net_host_rx");
 }
 
 function upload() {
@@ -178,6 +181,13 @@ function loadApps() {
     .then(response => response.blob())
     .then(blob => {
       const sampleApp = new File([blob], "virtio_net_min");
+      files.push(sampleApp);
+    });
+
+  fetch("./apps/virtio_net_host_rx.text")
+    .then(response => response.blob())
+    .then(blob => {
+      const sampleApp = new File([blob], "virtio_net_host_rx");
       files.push(sampleApp);
     });
 

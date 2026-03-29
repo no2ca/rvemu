@@ -47,7 +47,7 @@ uart_puts:
 	.align	1
 	.type	fail, @function
 fail:
-.LFB4:
+.LFB5:
 	.cfi_startproc
 	addi	sp,sp,-16
 	.cfi_def_cfa_offset 16
@@ -65,7 +65,7 @@ fail:
 .L13:
 	j	.L13
 	.cfi_endproc
-.LFE4:
+.LFE5:
 	.size	fail, .-fail
 	.section	.rodata.str1.8
 	.align	3
@@ -76,53 +76,59 @@ fail:
 	.string	"0x"
 	.align	3
 .LC4:
-	.string	"[host-rx] "
+	.string	"[host-rx] payload_len="
 	.align	3
 .LC5:
-	.string	"[host-rx] start\n"
+	.string	" hex="
 	.align	3
 .LC6:
-	.string	"bad magic"
+	.string	" ..."
 	.align	3
 .LC7:
-	.string	"bad version"
+	.string	"[host-rx] start\n"
 	.align	3
 .LC8:
-	.string	"bad device id"
+	.string	"bad magic"
 	.align	3
 .LC9:
-	.string	"bad vendor id"
+	.string	"bad version"
 	.align	3
 .LC10:
-	.string	"FEATURES_OK rejected"
+	.string	"bad device id"
 	.align	3
 .LC11:
-	.string	"queue_num_max is too small"
+	.string	"bad vendor id"
 	.align	3
 .LC12:
+	.string	"FEATURES_OK rejected"
+	.align	3
+.LC13:
+	.string	"queue_num_max is too small"
+	.align	3
+.LC14:
 	.string	"rx timeout"
 	.section	.text.startup,"ax",@progbits
 	.align	1
 	.globl	main
 	.type	main, @function
 main:
-.LFB15:
+.LFB16:
 	.cfi_startproc
-	addi	sp,sp,-64
-	.cfi_def_cfa_offset 64
-	lla	a0,.LC5
-	sd	ra,56(sp)
+	addi	sp,sp,-96
+	.cfi_def_cfa_offset 96
+	lla	a0,.LC7
+	sd	ra,88(sp)
 	.cfi_offset 1, -8
 	call	uart_puts
 	li	a5,0
 #APP
-# 139 "bin/raw/virtio_net_host_rx.c" 1
+# 145 "/mnt/c/Users/taise/Documents/exp/rvemu-xv6-net/rvemu/bin/raw/virtio_net_host_rx.c" 1
 	csrw mie, a5
 # 0 "" 2
 #NO_APP
 	li	a5,8
 #APP
-# 135 "bin/raw/virtio_net_host_rx.c" 1
+# 141 "/mnt/c/Users/taise/Documents/exp/rvemu-xv6-net/rvemu/bin/raw/virtio_net_host_rx.c" 1
 	csrs mstatus, a5
 # 0 "" 2
 #NO_APP
@@ -130,61 +136,64 @@ main:
 	lw	a4,0(a5)
 	li	a5,1953656832
 	addi	a5,a5,-1674
-	bne	a4,a5,.L74
+	bne	a4,a5,.L97
 	li	a5,268443648
 	lw	a4,4(a5)
 	li	a2,1
 	sext.w	a3,a4
-	bne	a4,a2,.L75
+	bne	a4,a2,.L98
 	li	a5,268443648
 	lw	a4,8(a5)
 	sext.w	a6,a4
-	bne	a4,a3,.L76
+	bne	a4,a3,.L99
 	li	a4,268443648
 	lw	a3,12(a4)
 	li	a5,1431126016
 	addi	a5,a5,1361
-	bne	a3,a5,.L77
-	li	a5,268443648
-	sw	zero,112(a5)
-	sw	a6,112(a5)
-	li	a4,3
-	sw	a4,112(a5)
+	bne	a3,a5,.L100
+	li	a4,268443648
+	sw	zero,112(a4)
+	sw	a6,112(a4)
+	li	a5,3
+	sw	a5,112(a4)
 	li	a2,268443648
 	sw	zero,20(a2)
 	li	a3,268443648
 	lw	a7,16(a3)
 	sw	a6,20(a2)
 	lw	a0,16(a3)
-	li	a4,268443648
-	sw	zero,36(a4)
+	li	a5,268443648
+	sw	zero,36(a5)
 	li	a1,268443648
 	sext.w	a7,a7
 	sw	a7,32(a1)
-	sw	a6,36(a4)
+	sw	a6,36(a5)
 	sext.w	a0,a0
 	sw	a0,32(a1)
 	li	a1,11
-	sw	a1,112(a5)
-	lw	a1,112(a5)
-	addi	a5,a5,112
+	sw	a1,112(a4)
+	lw	a1,112(a4)
+	addi	a4,a4,112
 	andi	a2,a1,8
-	beq	a2,zero,.L78
+	beq	a2,zero,.L101
 	li	a3,268443648
 	li	a0,4096
 	sw	a0,40(a3)
-	li	a4,268443648
-	sw	zero,48(a4)
+	li	a5,268443648
+	sw	zero,48(a5)
 	li	a3,268443648
 	lw	a2,52(a3)
 	li	a3,7
-	sd	s0,48(sp)
-	sd	s1,40(sp)
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s4,16(sp)
-	sd	s5,8(sp)
-	sd	s6,0(sp)
+	sd	s0,80(sp)
+	sd	s1,72(sp)
+	sd	s2,64(sp)
+	sd	s3,56(sp)
+	sd	s4,48(sp)
+	sd	s5,40(sp)
+	sd	s6,32(sp)
+	sd	s7,24(sp)
+	sd	s8,16(sp)
+	sd	s9,8(sp)
 	.cfi_offset 8, -16
 	.cfi_offset 9, -24
 	.cfi_offset 18, -32
@@ -192,13 +201,16 @@ main:
 	.cfi_offset 20, -48
 	.cfi_offset 21, -56
 	.cfi_offset 22, -64
-	bleu	a2,a3,.L79
-	li	a4,268443648
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
+	bleu	a2,a3,.L102
+	li	a5,268443648
 	li	a3,8
-	lla	a7,rx_queue_pages
-	sw	a3,56(a4)
+	lla	t3,rx_queue_pages
+	sw	a3,56(a5)
 	li	a2,268443648
-	srli	a1,a7,12
+	srli	a1,t3,12
 	sw	a0,60(a2)
 	li	a3,268443648
 	sext.w	a1,a1
@@ -209,10 +221,10 @@ main:
 	li	t2,199999488
 	li	ra,268443648
 	li	s1,268443648
-	li	a4,268435456
-	sw	a3,0(a5)
-	lla	t5,.LANCHOR0
-	li	a0,1
+	li	a5,268435456
+	sw	a3,0(a4)
+	lla	t4,.LANCHOR0
+	li	t1,1
 	lla	a3,.LANCHOR0+522
 	lla	t6,rx_queue_pages+4096
 	addi	t0,t0,522
@@ -221,118 +233,159 @@ main:
 	addi	s1,s1,100
 	li	s3,1
 	li	s0,24
+	li	s2,64
 	li	a2,268435456
-	addi	a4,a4,5
-	lla	s2,.LANCHOR0+25
-	li	a6,94
-	li	t4,46
-	li	a1,10
-	lla	t3,.LANCHOR1
-	li	t1,-4
-.L41:
-	addiw	s6,a0,-1
+	addi	a5,a5,5
+	lla	a7,.LANCHOR1
+	li	a6,-4
+	li	t5,32
+	lla	a1,hex.0
+	li	a0,10
+.L52:
+	addiw	s6,t1,-1
 	slli	s4,s6,48
 	srli	s4,s4,48
-	mv	a5,t5
+	mv	a4,t4
 .L22:
-	sb	zero,0(a5)
-	addi	a5,a5,1
-	bne	a3,a5,.L22
-	andi	a5,s4,7
-	slli	a5,a5,1
-	add	a5,a7,a5
-	sd	t5,0(a7)
-	sd	t0,8(a7)
-	sh	zero,132(a5)
+	sb	zero,0(a4)
+	addi	a4,a4,1
+	bne	a3,a4,.L22
+	andi	a4,s4,7
+	slli	a4,a4,1
+	add	a4,t3,a4
+	sd	t4,0(t3)
+	sd	t0,8(t3)
+	sh	zero,132(a4)
 #APP
-# 131 "bin/raw/virtio_net_host_rx.c" 1
+# 137 "/mnt/c/Users/taise/Documents/exp/rvemu-xv6-net/rvemu/bin/raw/virtio_net_host_rx.c" 1
 	fence rw, rw
 # 0 "" 2
 #NO_APP
-	sh	a0,130(a7)
+	sh	t1,130(t3)
 #APP
-# 131 "bin/raw/virtio_net_host_rx.c" 1
+# 137 "/mnt/c/Users/taise/Documents/exp/rvemu-xv6-net/rvemu/bin/raw/virtio_net_host_rx.c" 1
 	fence rw, rw
 # 0 "" 2
 #NO_APP
 	lhu	s5,2(t6)
-	mv	a5,t2
-	sext.w	s4,a0
+	mv	a4,t2
+	sext.w	s4,t1
 .L24:
 	beq	s4,s5,.L23
-	addiw	a5,a5,-1
-	bne	a5,zero,.L24
-	lla	a0,.LC12
+	addiw	a4,a4,-1
+	bne	a4,zero,.L24
+	lla	a0,.LC14
 	call	fail
 .L23:
-	lw	a5,0(ra)
-	andi	a5,a5,1
-	beq	a5,zero,.L25
+	lw	a4,0(ra)
+	andi	a4,a4,1
+	beq	a4,zero,.L25
 	sw	s3,0(s1)
 .L25:
 	sraiw	s4,s6,31
 	srliw	s4,s4,29
-	addw	a5,s6,s4
-	andi	a5,a5,7
-	subw	a5,a5,s4
-	slli	a5,a5,3
-	add	a5,t6,a5
-	lw	s4,8(a5)
-	lla	s6,.LC4
-	li	s5,91
-	bleu	s4,s0,.L80
+	addw	a4,s6,s4
+	andi	a4,a4,7
+	subw	a4,a4,s4
+	slli	a4,a4,3
+	add	a4,t6,a4
+	lw	s4,8(a4)
+	bleu	s4,s0,.L103
+	addiw	s5,s4,-24
+	mv	s4,s5
+	bleu	s5,s2,.L35
+	li	s4,64
 .L35:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L35
-	sb	s5,0(a2)
-	lbu	s5,1(s6)
-	addi	s6,s6,1
-	bne	s5,zero,.L35
-	addiw	s5,s4,-25
-	slli	s5,s5,32
-	srli	s5,s5,32
-	lla	s4,.LANCHOR0+24
-	add	s5,s2,s5
-.L39:
-	lbu	s6,0(s4)
-	addiw	a5,s6,-32
-	andi	a5,a5,0xff
-	bgtu	a5,a6,.L36
-.L37:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L37
-	sb	s6,0(a2)
-	addi	s4,s4,1
-	bne	s5,s4,.L39
-.L40:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L40
-.L72:
-	addiw	a0,a0,1
-	slli	a0,a0,48
-	sb	a1,0(a2)
-	srli	a0,a0,48
-	j	.L41
+	lla	s7,.LC4
+	li	s6,91
 .L36:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L36
-	sb	t4,0(a2)
-	addi	s4,s4,1
-	bne	s5,s4,.L39
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L40
-	j	.L72
-.L80:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L36
+	sb	s6,0(a2)
+	lbu	s6,1(s7)
+	addi	s7,s7,1
+	bne	s6,zero,.L36
+	lla	s7,.LC3
+	li	s6,48
+.L38:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L38
+	sb	s6,0(a2)
+	lbu	s6,1(s7)
+	addi	s7,s7,1
+	bne	s6,zero,.L38
+	li	s6,28
+.L41:
+	srlw	a4,s5,s6
+	andi	a4,a4,15
+	add	a4,a7,a4
+	lbu	s7,0(a4)
+.L40:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L40
+	sb	s7,0(a2)
+	addiw	s6,s6,-4
+	bne	s6,a6,.L41
+	lla	s7,.LC5
+	li	s6,32
+.L42:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L42
+	sb	s6,0(a2)
+	lbu	s6,1(s7)
+	addi	s7,s7,1
+	bne	s6,zero,.L42
+	lla	s7,.LANCHOR0+24
+.L44:
+	lbu	s8,0(s7)
+	srli	a4,s8,4
+	add	a4,a1,a4
+	lbu	s9,0(a4)
+.L46:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L46
+	andi	s8,s8,15
+	add	s8,a1,s8
+	lbu	s8,0(s8)
+	sb	s9,0(a2)
+.L47:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L47
+	sb	s8,0(a2)
+	addiw	s6,s6,1
+	beq	s4,s6,.L104
+.L45:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L45
+	addi	s7,s7,1
+	sb	t5,0(a2)
+	j	.L44
+.L104:
+	bgtu	s5,s4,.L105
+.L49:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L49
+.L95:
+	addiw	t1,t1,1
+	slli	t1,t1,48
+	sb	a0,0(a2)
+	srli	t1,t1,48
+	j	.L52
+.L103:
 	lla	s6,.LC2
+	li	s5,91
 .L27:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L27
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L27
 	sb	s5,0(a2)
 	lbu	s5,1(s6)
 	addi	s6,s6,1
@@ -340,35 +393,47 @@ main:
 	lla	s6,.LC3
 	li	s5,48
 .L29:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L29
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L29
 	sb	s5,0(a2)
 	lbu	s5,1(s6)
 	addi	s6,s6,1
 	bne	s5,zero,.L29
 	li	s5,28
 .L32:
-	srlw	a5,s4,s5
-	andi	a5,a5,15
-	add	a5,t3,a5
-	lbu	s6,0(a5)
+	srlw	a4,s4,s5
+	andi	a4,a4,15
+	add	a4,a7,a4
+	lbu	s6,0(a4)
 .L31:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L31
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L31
 	sb	s6,0(a2)
 	addiw	s5,s5,-4
-	bne	s5,t1,.L32
+	bne	s5,a6,.L32
 .L33:
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	bne	a5,zero,.L72
-	lbu	a5,0(a4)
-	andi	a5,a5,32
-	beq	a5,zero,.L33
-	j	.L72
-.L74:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	bne	a4,zero,.L95
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L33
+	j	.L95
+.L105:
+	lla	s5,.LC6
+	li	s4,32
+.L50:
+	lbu	a4,0(a5)
+	andi	a4,a4,32
+	beq	a4,zero,.L50
+	sb	s4,0(a2)
+	lbu	s4,1(s5)
+	addi	s5,s5,1
+	bne	s4,zero,.L50
+	j	.L49
+.L97:
 	.cfi_restore 8
 	.cfi_restore 9
 	.cfi_restore 18
@@ -376,14 +441,20 @@ main:
 	.cfi_restore 20
 	.cfi_restore 21
 	.cfi_restore 22
-	lla	a0,.LC6
-	sd	s0,48(sp)
-	sd	s1,40(sp)
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s4,16(sp)
-	sd	s5,8(sp)
-	sd	s6,0(sp)
+	.cfi_restore 23
+	.cfi_restore 24
+	.cfi_restore 25
+	lla	a0,.LC8
+	sd	s0,80(sp)
+	sd	s1,72(sp)
+	sd	s2,64(sp)
+	sd	s3,56(sp)
+	sd	s4,48(sp)
+	sd	s5,40(sp)
+	sd	s6,32(sp)
+	sd	s7,24(sp)
+	sd	s8,16(sp)
+	sd	s9,8(sp)
 	.cfi_offset 8, -16
 	.cfi_offset 9, -24
 	.cfi_offset 18, -32
@@ -391,11 +462,14 @@ main:
 	.cfi_offset 20, -48
 	.cfi_offset 21, -56
 	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
 	call	fail
-.L79:
-	lla	a0,.LC11
+.L102:
+	lla	a0,.LC13
 	call	fail
-.L78:
+.L101:
 	.cfi_restore 8
 	.cfi_restore 9
 	.cfi_restore 18
@@ -403,14 +477,20 @@ main:
 	.cfi_restore 20
 	.cfi_restore 21
 	.cfi_restore 22
-	lla	a0,.LC10
-	sd	s0,48(sp)
-	sd	s1,40(sp)
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s4,16(sp)
-	sd	s5,8(sp)
-	sd	s6,0(sp)
+	.cfi_restore 23
+	.cfi_restore 24
+	.cfi_restore 25
+	lla	a0,.LC12
+	sd	s0,80(sp)
+	sd	s1,72(sp)
+	sd	s2,64(sp)
+	sd	s3,56(sp)
+	sd	s4,48(sp)
+	sd	s5,40(sp)
+	sd	s6,32(sp)
+	sd	s7,24(sp)
+	sd	s8,16(sp)
+	sd	s9,8(sp)
 	.cfi_remember_state
 	.cfi_offset 8, -16
 	.cfi_offset 9, -24
@@ -419,18 +499,73 @@ main:
 	.cfi_offset 20, -48
 	.cfi_offset 21, -56
 	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
 	call	fail
-.L77:
+.L100:
+	.cfi_restore_state
+	lla	a0,.LC11
+	sd	s0,80(sp)
+	sd	s1,72(sp)
+	sd	s2,64(sp)
+	sd	s3,56(sp)
+	sd	s4,48(sp)
+	sd	s5,40(sp)
+	sd	s6,32(sp)
+	sd	s7,24(sp)
+	sd	s8,16(sp)
+	sd	s9,8(sp)
+	.cfi_remember_state
+	.cfi_offset 8, -16
+	.cfi_offset 9, -24
+	.cfi_offset 18, -32
+	.cfi_offset 19, -40
+	.cfi_offset 20, -48
+	.cfi_offset 21, -56
+	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
+	call	fail
+.L99:
+	.cfi_restore_state
+	lla	a0,.LC10
+	sd	s0,80(sp)
+	sd	s1,72(sp)
+	sd	s2,64(sp)
+	sd	s3,56(sp)
+	sd	s4,48(sp)
+	sd	s5,40(sp)
+	sd	s6,32(sp)
+	sd	s7,24(sp)
+	sd	s8,16(sp)
+	sd	s9,8(sp)
+	.cfi_remember_state
+	.cfi_offset 8, -16
+	.cfi_offset 9, -24
+	.cfi_offset 18, -32
+	.cfi_offset 19, -40
+	.cfi_offset 20, -48
+	.cfi_offset 21, -56
+	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
+	call	fail
+.L98:
 	.cfi_restore_state
 	lla	a0,.LC9
-	sd	s0,48(sp)
-	sd	s1,40(sp)
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s4,16(sp)
-	sd	s5,8(sp)
-	sd	s6,0(sp)
-	.cfi_remember_state
+	sd	s0,80(sp)
+	sd	s1,72(sp)
+	sd	s2,64(sp)
+	sd	s3,56(sp)
+	sd	s4,48(sp)
+	sd	s5,40(sp)
+	sd	s6,32(sp)
+	sd	s7,24(sp)
+	sd	s8,16(sp)
+	sd	s9,8(sp)
 	.cfi_offset 8, -16
 	.cfi_offset 9, -24
 	.cfi_offset 18, -32
@@ -438,53 +573,20 @@ main:
 	.cfi_offset 20, -48
 	.cfi_offset 21, -56
 	.cfi_offset 22, -64
-	call	fail
-.L76:
-	.cfi_restore_state
-	lla	a0,.LC8
-	sd	s0,48(sp)
-	sd	s1,40(sp)
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s4,16(sp)
-	sd	s5,8(sp)
-	sd	s6,0(sp)
-	.cfi_remember_state
-	.cfi_offset 8, -16
-	.cfi_offset 9, -24
-	.cfi_offset 18, -32
-	.cfi_offset 19, -40
-	.cfi_offset 20, -48
-	.cfi_offset 21, -56
-	.cfi_offset 22, -64
-	call	fail
-.L75:
-	.cfi_restore_state
-	lla	a0,.LC7
-	sd	s0,48(sp)
-	sd	s1,40(sp)
-	sd	s2,32(sp)
-	sd	s3,24(sp)
-	sd	s4,16(sp)
-	sd	s5,8(sp)
-	sd	s6,0(sp)
-	.cfi_offset 8, -16
-	.cfi_offset 9, -24
-	.cfi_offset 18, -32
-	.cfi_offset 19, -40
-	.cfi_offset 20, -48
-	.cfi_offset 21, -56
-	.cfi_offset 22, -64
+	.cfi_offset 23, -72
+	.cfi_offset 24, -80
+	.cfi_offset 25, -88
 	call	fail
 	.cfi_endproc
-.LFE15:
+.LFE16:
 	.size	main, .-main
+	.set	hex.0,hex.1
 	.section	.rodata
 	.align	3
 	.set	.LANCHOR1,. + 0
-	.type	hex.0, @object
-	.size	hex.0, 17
-hex.0:
+	.type	hex.1, @object
+	.size	hex.1, 17
+hex.1:
 	.string	"0123456789abcdef"
 	.bss
 	.align	12

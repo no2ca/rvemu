@@ -111,6 +111,12 @@ static void uart_put_u32_hex(u32 v) {
     }
 }
 
+static void uart_put_u8_hex(u8 v) {
+    static const char hex[] = "0123456789abcdef";
+    uart_putc(hex[(v >> 4) & 0xf]);
+    uart_putc(hex[v & 0xf]);
+}
+
 static void fail(const char *msg) {
     uart_puts("[host-rx] FAIL: ");
     uart_puts(msg);
@@ -234,6 +240,8 @@ static void print_received_payload(u32 used_len) {
     u32 i;
     u32 frame_len;
     u32 payload_offset = VIRTIO_NET_HDR_SIZE + ETH_HEADER_SIZE;
+    u32 dump_len;
+    const u32 max_dump_len = 64;
 
     if (used_len <= payload_offset) {
         uart_puts("[host-rx] short frame len=");
@@ -243,14 +251,22 @@ static void print_received_payload(u32 used_len) {
     }
 
     frame_len = used_len - payload_offset;
-    uart_puts("[host-rx] ");
-    for (i = 0; i < frame_len; i++) {
-        u8 c = rx_frame[payload_offset + i];
-        if (c >= 32 && c <= 126) {
-            uart_putc((char) c);
-        } else {
-            uart_putc('.');
+    dump_len = frame_len;
+    if (dump_len > max_dump_len) {
+        dump_len = max_dump_len;
+    }
+
+    uart_puts("[host-rx] payload_len=");
+    uart_put_u32_hex(frame_len);
+    uart_puts(" hex=");
+    for (i = 0; i < dump_len; i++) {
+        if (i != 0) {
+            uart_putc(' ');
         }
+        uart_put_u8_hex(rx_frame[payload_offset + i]);
+    }
+    if (frame_len > dump_len) {
+        uart_puts(" ...");
     }
     uart_puts("\n");
 }

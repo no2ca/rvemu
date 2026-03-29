@@ -51,6 +51,14 @@ fn clear_executing() {
     flag.set_text_content(Some("inactive"));
 }
 
+/// Returns current time in milliseconds from `performance.now()`.
+fn now_millis() -> f64 {
+    window()
+        .performance()
+        .expect("no `performance` exists")
+        .now()
+}
+
 /// Add a new element to the output buffer in JS.
 fn output(message: &str) {
     let document = window().document().expect("failed to get a document");
@@ -89,8 +97,25 @@ fn dump_registers(cpu: &mut Cpu) {
     log(&format!("pc: {:#x}", cpu.pc));
 }
 
+fn build_broadcast_frame(payload: &[u8]) -> Vec<u8> {
+    let mut frame = Vec::with_capacity(14 + payload.len());
+    // dst mac: ff:ff:ff:ff:ff:ff
+    frame.extend_from_slice(&[0xff; 6]);
+    // src mac: 02:00:00:00:00:01
+    frame.extend_from_slice(&[0x02, 0x00, 0x00, 0x00, 0x00, 0x01]);
+    // ethertype: 0x0800 (IPv4-ish for demo)
+    frame.extend_from_slice(&[0x08, 0x00]);
+    frame.extend_from_slice(payload);
+    frame
+}
+
 #[wasm_bindgen]
 pub fn emulator_start(kernel: Vec<u8>, fsimg: Option<Vec<u8>>) {
+    emulator_start_with_net_demo(kernel, fsimg, false);
+}
+
+#[wasm_bindgen]
+pub fn emulator_start_with_net_demo(kernel: Vec<u8>, fsimg: Option<Vec<u8>>, net_demo: bool) {
     utils::set_panic_hook();
 
     let mut emu = emulator::Emulator::new();
@@ -105,11 +130,33 @@ pub fn emulator_start(kernel: Vec<u8>, fsimg: Option<Vec<u8>>) {
     let mut generator = #[coroutine]
     move || {
         let mut count: u64 = 0;
+        let mut tick: u64 = 0;
+        let period_ms = 1000.0;
+        let mut next_send_ms = now_millis() + period_ms;
+
+        if net_demo {
+            log("net-demo mode is enabled; injecting host packets periodically");
+        }
+
         loop {
             count += 1;
             if count > 500000 {
                 count = 0;
                 yield;
+            }
+
+            // Run a cycle on peripheral devices.
+            emu.cpu.devices_increment();
+
+            if net_demo {
+                let now_ms = now_millis();
+                if now_ms >= next_send_ms {
+                    let msg = format!("host-tick-{}", tick);
+                    let frame = build_broadcast_frame(msg.as_bytes());
+                    emu.cpu.bus.virtio_net.inject_rx_packet(frame);
+                    tick = tick.wrapping_add(1);
+                    next_send_ms = now_ms + period_ms;
+                }
             }
 
             // Take an interrupt.

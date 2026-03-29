@@ -1,8 +1,15 @@
 use clap::{App, Arg};
+#[cfg(feature = "net-pcap")]
+use pcap::{Active, Capture, Device};
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::iter::FromIterator;
+#[cfg(feature = "net-pcap")]
+use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+#[cfg(feature = "net-pcap")]
+use std::thread;
 use std::time::{Duration, Instant};
 
 use rvemu_core::bus::DRAM_BASE;
@@ -47,25 +54,101 @@ fn build_broadcast_frame(payload: &[u8]) -> Vec<u8> {
     frame
 }
 
-fn start_with_periodic_host_packets(emu: &mut Emulator, period: Duration) {
+#[cfg(feature = "net-pcap")]
+fn open_pcap_capture(interface: &str) -> io::Result<Capture<Active>> {
+    let inactive = Capture::from_device(interface)
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("pcap from_device: {e}")))?
+        .promisc(true)
+        .immediate_mode(true)
+        .timeout(100);
+
+    inactive
+        .open()
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("pcap open: {e}")))
+}
+
+#[cfg(feature = "net-pcap")]
+fn spawn_pcap_receiver(interface: String) -> io::Result<Receiver<Vec<u8>>> {
+    let devices = Device::list()
+        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("pcap list: {e}")))?;
+    if !devices.iter().any(|d| d.name == interface) {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("pcap interface not found: {interface}"),
+        ));
+    }
+
+    let (tx, rx) = mpsc::channel::<Vec<u8>>();
+    thread::spawn(move || {
+        let mut cap = match open_pcap_capture(&interface) {
+            Ok(cap) => cap,
+            Err(err) => {
+                eprintln!("[pcap] failed to open {interface}: {err}");
+                return;
+            }
+        };
+
+        loop {
+            match cap.next_packet() {
+                Ok(packet) => {
+                    if tx.send(packet.data.to_vec()).is_err() {
+                        break;
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    });
+
+    Ok(rx)
+}
+
+#[cfg(not(feature = "net-pcap"))]
+fn spawn_pcap_receiver(_interface: String) -> io::Result<Receiver<Vec<u8>>> {
+    Err(io::Error::new(
+        io::ErrorKind::Other,
+        "net-pcap feature is disabled; rebuild rvemu-cli with --features net-pcap",
+    ))
+}
+
+fn start_with_host_net_inputs(
+    emu: &mut Emulator,
+    periodic_period: Option<Duration>,
+    pcap_rx: Option<Receiver<Vec<u8>>>,
+) {
     let mut tick: u64 = 0;
-    let mut next_send = Instant::now() + period;
+    let mut next_send = periodic_period.map(|period| Instant::now() + period);
 
     if emu.is_debug || emu.cpu.is_count {
-        println!("net-demo mode is enabled; injecting host packets periodically");
+        if periodic_period.is_some() {
+            println!("net-demo mode is enabled; injecting host packets periodically");
+        }
+        if pcap_rx.is_some() {
+            println!("pcap mode is enabled; forwarding host packets to virtio-net");
+        }
     }
 
     loop {
         // Run a cycle on peripheral devices.
         emu.cpu.devices_increment();
 
-        let now = Instant::now();
-        if now >= next_send {
-            let msg = format!("host-tick-{}", tick);
-            let frame = build_broadcast_frame(msg.as_bytes());
-            emu.cpu.bus.virtio_net.inject_rx_packet(frame);
-            tick = tick.wrapping_add(1);
-            next_send = now + period;
+        if let Some(period) = periodic_period {
+            let now = Instant::now();
+            if let Some(deadline) = next_send {
+                if now >= deadline {
+                    let msg = format!("host-tick-{}", tick);
+                    let frame = build_broadcast_frame(msg.as_bytes());
+                    emu.cpu.bus.virtio_net.inject_rx_packet(frame);
+                    tick = tick.wrapping_add(1);
+                    next_send = Some(now + period);
+                }
+            }
+        }
+
+        if let Some(rx) = pcap_rx.as_ref() {
+            while let Ok(frame) = rx.try_recv() {
+                emu.cpu.bus.virtio_net.inject_rx_packet(frame);
+            }
         }
 
         // Take an interrupt.
@@ -127,6 +210,13 @@ fn main() -> io::Result<()> {
                 .long("net-demo")
                 .help("Injects one host->guest virtio-net frame every few seconds"),
         )
+        .arg(
+            Arg::with_name("net-pcap")
+                .long("net-pcap")
+                .takes_value(true)
+                .value_name("IFACE")
+                .help("Forwards packets captured from IFACE to virtio-net RX queue"),
+        )
         .get_matches();
 
     let mut kernel_file = File::open(
@@ -156,8 +246,20 @@ fn main() -> io::Result<()> {
         emu.cpu.is_count = true;
     }
 
-    if matches.occurrences_of("net-demo") == 1 {
-        start_with_periodic_host_packets(&mut emu, Duration::from_secs(1));
+    let net_demo = matches.occurrences_of("net-demo") == 1;
+    let pcap_rx = if let Some(interface) = matches.value_of("net-pcap") {
+        Some(spawn_pcap_receiver(interface.to_string())?)
+    } else {
+        None
+    };
+
+    if net_demo || pcap_rx.is_some() {
+        let periodic_period = if net_demo {
+            Some(Duration::from_secs(1))
+        } else {
+            None
+        };
+        start_with_host_net_inputs(&mut emu, periodic_period, pcap_rx);
     } else {
         emu.start();
     }
